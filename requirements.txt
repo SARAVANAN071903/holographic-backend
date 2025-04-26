@@ -1,0 +1,7 @@
+Flask
+flask-cors
+torch
+numpy
+opencv-python
+qrcode
+Pillow
