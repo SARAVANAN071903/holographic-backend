@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: holosecure-otp
+    env: python
+    buildCommand: ""
+    startCommand: python backend/app.py
+    envVars:
+      - key: PORT
+        value: 5080
