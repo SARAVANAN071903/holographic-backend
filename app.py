@@ -71,7 +71,4 @@ def serve_otp_image(filename):
     except FileNotFoundError:
         return jsonify({"error": "OTP expired"}), 404
 
-# ✅ Ensure correct port is used for Render
-if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port, debug=False)
+
