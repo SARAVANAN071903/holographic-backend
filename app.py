@@ -9,13 +9,14 @@ from PIL import Image
 
 app = Flask(__name__)
 CORS(app)
-OUTPUT_DIR = os.path.join(os.path.dirname(__file__), '..', 'output')
+
+# ✅ Store output in a safe writable directory (inside the project folder)
+OUTPUT_DIR = os.path.join(os.path.dirname(__file__), 'output')
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 def generate_holographic_qr(otp_code, output_path):
     """Generate holographic-styled QR code without visible OTP"""
     try:
-        # 1. Generate pure QR code
         qr = qrcode.QRCode(
             version=4,
             error_correction=qrcode.constants.ERROR_CORRECT_H,
@@ -25,24 +26,21 @@ def generate_holographic_qr(otp_code, output_path):
         qr.add_data(otp_code)
         qr.make(fit=True)
         qr_img = qr.make_image(fill_color="black", back_color="white").convert('RGB')
-        
-        # 2. Create holographic effect (simplified example)
+
+        # Simple rainbow holographic pattern
         hologram = np.zeros((qr_img.size[1], qr_img.size[0], 3), dtype=np.uint8)
-        
-        # Rainbow hologram pattern (replace with your GAN output)
         for i in range(hologram.shape[0]):
-            hologram[i,:,0] = np.linspace(0, 255, hologram.shape[1])  # Red
-            hologram[i,:,1] = np.linspace(255, 0, hologram.shape[1])   # Green
-            hologram[i,:,2] = 128                                      # Blue
-        
-        # 3. Blend QR with hologram
+            hologram[i, :, 0] = np.linspace(0, 255, hologram.shape[1])  # Red
+            hologram[i, :, 1] = np.linspace(255, 0, hologram.shape[1])  # Green
+            hologram[i, :, 2] = 128                                      # Blue
+
+        # Blend QR code with hologram
         qr_np = np.array(qr_img)
         blended = cv2.addWeighted(hologram, 0.7, qr_np, 0.3, 0)
-        
-        # 4. Save final image
+
+        # Save result
         cv2.imwrite(output_path, cv2.cvtColor(blended, cv2.COLOR_RGB2BGR))
         return True
-        
     except Exception as e:
         print(f"Holographic QR generation failed: {e}")
         return False
@@ -50,16 +48,16 @@ def generate_holographic_qr(otp_code, output_path):
 @app.route('/generate_otp')
 def generate_otp():
     try:
-        otp_code = secrets.token_hex(3)  # 6-char secure code
+        otp_code = secrets.token_hex(3)
         filename = f"holographic_otp_{otp_code}.png"
         image_path = os.path.join(OUTPUT_DIR, filename)
-        
+
         if not generate_holographic_qr(otp_code, image_path):
             raise RuntimeError("Failed to generate holographic OTP")
-        
+
         return jsonify({
             "status": "success",
-            "otp": otp_code,  # Only in response, not in image
+            "otp": otp_code,
             "image_url": f"/otp_image/{filename}",
             "expires_in": 300
         })
@@ -72,6 +70,8 @@ def serve_otp_image(filename):
         return send_from_directory(OUTPUT_DIR, filename, mimetype='image/png')
     except FileNotFoundError:
         return jsonify({"error": "OTP expired"}), 404
+
+# ✅ Ensure correct port is used for Render
 if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 5080))
-    app.run(host='0.0.0.0', port=port, debug=True)
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port, debug=False)
