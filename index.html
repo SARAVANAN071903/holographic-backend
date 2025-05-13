@@ -91,59 +91,79 @@
         <button id="generateOtp">Generate Holographic OTP</button>
         <div class="loading-spinner" id="loading"></div>
         <div id="otpSection" style="display: none;">
-            <img id="qrImage" src="" alt="Holographic OTP">
+            <img id="otpImage" src="" alt="Holographic OTP">
             <input type="text" id="otpInput" placeholder="Enter OTP">
             <button id="verifyOtp">Verify OTP</button>
             <div id="message" class="message"></div>
             <div id="otpTimer" class="timer"></div>
         </div>
     </div>
-    
+
     <script>
+        // Configuration - Replace with your Render URL
+        const BACKEND_URL = 'https://holographic-backend.onrender.com';
         let otpExpiryTime = 120; // 2 minutes
         let otpExpiryTimer;
+        let currentOtp = null;
 
         document.getElementById("generateOtp").addEventListener("click", function() {
             const generateBtn = this;
             const loadingSpinner = document.getElementById("loading");
             const otpSection = document.getElementById("otpSection");
-            const otpImage = document.getElementById("qrImage");
+            const otpImage = document.getElementById("otpImage");
+            const messageDiv = document.getElementById("message");
 
-            generateBtn.disabled = true; // Disable the button to prevent multiple clicks
-            loadingSpinner.style.display = "block"; // Show loading spinner
+            // Reset UI
+            generateBtn.disabled = true;
+            loadingSpinner.style.display = "block";
+            messageDiv.textContent = "";
+            otpImage.style.opacity = 0;
+            clearInterval(otpExpiryTimer);
 
-            fetch("http://localhost:5080/generate_otp")
-                .then(response => response.json())
-                .then(data => {
-                    if (data.status === "success") {
-                        otpImage.src = "http://localhost:5080" + data.image_url;
+            // Fetch OTP image from Render backend
+            fetch(`${BACKEND_URL}/generate_otp`)
+                .then(response => {
+                    if (!response.ok) throw new Error('Network error');
+                    return response.blob();
+                })
+                .then(imageBlob => {
+                    const imageUrl = URL.createObjectURL(imageBlob);
+                    otpImage.src = imageUrl;
+                    otpImage.onload = () => {
+                        otpImage.style.opacity = 1;
                         otpSection.style.display = "block";
-                        otpImage.style.opacity = 1; // Fade-in effect for QR code
-                        document.getElementById("verifyOtp").dataset.otp = data.otp;
-
-                        // Start OTP expiry countdown
-                        startOtpTimer();
-
-                        // Enable the button after OTP generation
-                        generateBtn.disabled = false;
                         loadingSpinner.style.display = "none";
-                    }
+                        generateBtn.disabled = false;
+                        
+                        // Generate a random OTP (for demo - replace with server-side logic)
+                        currentOtp = Math.floor(100000 + Math.random() * 900000).toString();
+                        startOtpTimer();
+                    };
                 })
                 .catch(error => {
-                    console.error("Error fetching OTP:", error);
-                    generateBtn.disabled = false;
+                    console.error("Error:", error);
+                    messageDiv.textContent = "Error generating OTP. Try again.";
+                    messageDiv.style.color = "red";
                     loadingSpinner.style.display = "none";
+                    generateBtn.disabled = false;
                 });
         });
 
         document.getElementById("verifyOtp").addEventListener("click", function() {
-            let enteredOtp = document.getElementById("otpInput").value;
-            let generatedOtp = this.dataset.otp;
-            let messageDiv = document.getElementById("message");
+            const enteredOtp = document.getElementById("otpInput").value;
+            const messageDiv = document.getElementById("message");
 
-            if (enteredOtp === generatedOtp) {
+            if (!currentOtp) {
+                messageDiv.textContent = "Generate an OTP first!";
+                messageDiv.style.color = "red";
+                return;
+            }
+
+            if (enteredOtp === currentOtp) {
                 messageDiv.textContent = "✅ OTP Verified Successfully!";
                 messageDiv.style.color = "green";
+                clearInterval(otpExpiryTimer);
+                document.getElementById("otpTimer").textContent = "";
             } else {
                 messageDiv.textContent = "❌ Invalid OTP!";
                 messageDiv.style.color = "red";
@@ -151,11 +171,14 @@
         });
 
         function startOtpTimer() {
+            otpExpiryTime = 120;
             const timerElement = document.getElementById("otpTimer");
+            
             otpExpiryTimer = setInterval(() => {
                 if (otpExpiryTime <= 0) {
                     clearInterval(otpExpiryTimer);
                     timerElement.textContent = "OTP Expired!";
+                    currentOtp = null;
                 } else {
                     const minutes = Math.floor(otpExpiryTime / 60);
                     const seconds = otpExpiryTime % 60;
