@@ -6,11 +6,20 @@ import qrcode
 from flask_cors import CORS
 from flask import Flask, jsonify, send_from_directory
 from PIL import Image
+from dotenv import load_dotenv
+
+# ✅ Load environment variables from a .env file (for local testing)
+load_dotenv()
 
 app = Flask(__name__)
+
+# ✅ Secure secret key usage
+app.secret_key = os.getenv("SECRET_KEY", "fallback_dev_key")
+
+# ✅ Enable CORS
 CORS(app)
 
-# ✅ Store output in a safe writable directory (inside the project folder)
+# ✅ Output directory for QR images
 OUTPUT_DIR = os.path.join(os.path.dirname(__file__), 'output')
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
@@ -48,7 +57,7 @@ def generate_holographic_qr(otp_code, output_path):
 @app.route('/generate_otp')
 def generate_otp():
     try:
-        otp_code = secrets.token_hex(3)
+        otp_code = secrets.token_hex(3)  # 6-digit hexadecimal OTP
         filename = f"holographic_otp_{otp_code}.png"
         image_path = os.path.join(OUTPUT_DIR, filename)
 
@@ -59,7 +68,7 @@ def generate_otp():
             "status": "success",
             "otp": otp_code,
             "image_url": f"/otp_image/{filename}",
-            "expires_in": 300
+            "expires_in": 300  # For client-side handling
         })
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
@@ -71,4 +80,5 @@ def serve_otp_image(filename):
     except FileNotFoundError:
         return jsonify({"error": "OTP expired"}), 404
 
-
+if __name__ == '__main__':
+    app.run(debug=True)
