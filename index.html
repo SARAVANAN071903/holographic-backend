@@ -1,192 +1,190 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HoloSecure OTP</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            background-color: #f4f4f4;
-            padding: 20px;
-            margin: 0;
-            height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-        .container {
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            max-width: 400px;
-            width: 100%;
-        }
-        h2 {
-            font-size: 24px;
-            margin-bottom: 15px;
-        }
-        button {
-            background: linear-gradient(45deg, #ff416c, #ff4b2b);
-            color: white;
-            padding: 10px 15px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            margin-top: 10px;
-            transition: opacity 0.3s ease;
-        }
-        button:hover {
-            opacity: 0.9;
-        }
-        img {
-            width: 200px;
-            margin-top: 15px;
-            border-radius: 5px;
-            opacity: 0;
-            transition: opacity 0.5s ease-in;
-        }
-        input {
-            padding: 10px;
-            width: 80%;
-            margin-top: 10px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-        }
-        .message {
-            margin-top: 10px;
-            font-weight: bold;
-        }
-        .loading-spinner {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #3498db;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 2s linear infinite;
-            display: none;
-            margin-top: 20px;
-        }
-        .timer {
-            margin-top: 10px;
-            font-size: 18px;
-            color: #ff0000;
-        }
-        @media (max-width: 600px) {
-            .container {
-                padding: 15px;
-            }
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>HoloSecure OTP</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background-color: #f4f4f4;
+      padding: 20px;
+      margin: 0;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .container {
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      max-width: 400px;
+      width: 100%;
+    }
+    h2 {
+      font-size: 24px;
+      margin-bottom: 15px;
+    }
+    button {
+      background: linear-gradient(45deg, #ff416c, #ff4b2b);
+      color: white;
+      padding: 10px 15px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-top: 10px;
+      transition: opacity 0.3s ease;
+    }
+    button:hover {
+      opacity: 0.9;
+    }
+    img {
+      width: 200px;
+      margin-top: 15px;
+      border-radius: 5px;
+      opacity: 0;
+      transition: opacity 0.5s ease-in;
+    }
+    input {
+      padding: 10px;
+      width: 80%;
+      margin-top: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+    .message {
+      margin-top: 10px;
+      font-weight: bold;
+    }
+    .loading-spinner {
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #3498db;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 2s linear infinite;
+      display: none;
+      margin: 20px auto;
+    }
+    .timer {
+      margin-top: 10px;
+      font-size: 18px;
+      color: #ff0000;
+    }
+    @media (max-width: 600px) {
+      .container {
+        padding: 15px;
+      }
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <h2>HoloSecure: Holographic OTP</h2>
-        <button id="generateOtp">Generate Holographic OTP</button>
-        <div class="loading-spinner" id="loading"></div>
-        <div id="otpSection" style="display: none;">
-            <img id="otpImage" src="" alt="Holographic OTP">
-            <input type="text" id="otpInput" placeholder="Enter OTP">
-            <button id="verifyOtp">Verify OTP</button>
-            <div id="message" class="message"></div>
-            <div id="otpTimer" class="timer"></div>
-        </div>
+  <div class="container">
+    <h2>HoloSecure: Holographic OTP</h2>
+    <button id="generateOtp">Generate Holographic OTP</button>
+    <div class="loading-spinner" id="loading"></div>
+    <div id="otpSection" style="display: none;">
+      <img id="otpImage" src="" alt="Holographic OTP" />
+      <input type="text" id="otpInput" placeholder="Enter OTP" />
+      <button id="verifyOtp">Verify OTP</button>
+      <div id="message" class="message"></div>
+      <div id="otpTimer" class="timer"></div>
     </div>
+  </div>
 
-    <script>
-        // Configuration - Replace with your Render URL
-        const BACKEND_URL = 'https://holographic-backend.onrender.com';
-        let otpExpiryTime = 120; // 2 minutes
-        let otpExpiryTimer;
-        let currentOtp = null;
+  <script>
+    const BACKEND_URL = 'https://holographic-backend.onrender.com';
+    let otpExpiryTime = 120;
+    let otpExpiryTimer;
 
-        document.getElementById("generateOtp").addEventListener("click", function() {
-            const generateBtn = this;
-            const loadingSpinner = document.getElementById("loading");
-            const otpSection = document.getElementById("otpSection");
-            const otpImage = document.getElementById("otpImage");
-            const messageDiv = document.getElementById("message");
+    document.getElementById("generateOtp").addEventListener("click", function () {
+      const generateBtn = this;
+      const loadingSpinner = document.getElementById("loading");
+      const otpSection = document.getElementById("otpSection");
+      const otpImage = document.getElementById("otpImage");
+      const messageDiv = document.getElementById("message");
 
-            // Reset UI
-            generateBtn.disabled = true;
-            loadingSpinner.style.display = "block";
-            messageDiv.textContent = "";
-            otpImage.style.opacity = 0;
+      // Reset UI
+      generateBtn.disabled = true;
+      loadingSpinner.style.display = "block";
+      messageDiv.textContent = "";
+      otpImage.style.opacity = 0;
+      clearInterval(otpExpiryTimer);
+
+      fetch(`${BACKEND_URL}/generate_otp`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.status !== "success") throw new Error("OTP generation failed");
+
+          const imageUrl = `${BACKEND_URL}${data.image_url}`;
+          otpImage.src = imageUrl;
+
+          otpImage.onload = () => {
+            otpImage.style.opacity = 1;
+            otpSection.style.display = "block";
+            loadingSpinner.style.display = "none";
+            generateBtn.disabled = false;
+            startOtpTimer();
+          };
+        })
+        .catch((err) => {
+          messageDiv.textContent = "Error generating OTP. Try again.";
+          messageDiv.style.color = "red";
+          loadingSpinner.style.display = "none";
+          generateBtn.disabled = false;
+        });
+    });
+
+    document.getElementById("verifyOtp").addEventListener("click", function () {
+      const otpInput = document.getElementById("otpInput").value;
+      const messageDiv = document.getElementById("message");
+
+      fetch(`${BACKEND_URL}/verify_otp`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ otp: otpInput }),
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.status === "success") {
+            messageDiv.textContent = "✅ OTP Verified Successfully!";
+            messageDiv.style.color = "green";
             clearInterval(otpExpiryTimer);
-
-            // Fetch OTP image from Render backend
-            fetch(`${BACKEND_URL}/generate_otp`)
-                .then(response => {
-                    if (!response.ok) throw new Error('Network error');
-                    return response.blob();
-                })
-                .then(imageBlob => {
-                    const imageUrl = URL.createObjectURL(imageBlob);
-                    otpImage.src = imageUrl;
-                    otpImage.onload = () => {
-                        otpImage.style.opacity = 1;
-                        otpSection.style.display = "block";
-                        loadingSpinner.style.display = "none";
-                        generateBtn.disabled = false;
-                        
-                        // Generate a random OTP (for demo - replace with server-side logic)
-                        currentOtp = Math.floor(100000 + Math.random() * 900000).toString();
-                        startOtpTimer();
-                    };
-                })
-                .catch(error => {
-                    console.error("Error:", error);
-                    messageDiv.textContent = "Error generating OTP. Try again.";
-                    messageDiv.style.color = "red";
-                    loadingSpinner.style.display = "none";
-                    generateBtn.disabled = false;
-                });
+            document.getElementById("otpTimer").textContent = "";
+          } else {
+            messageDiv.textContent = "❌ Invalid OTP!";
+            messageDiv.style.color = "red";
+          }
+        })
+        .catch(() => {
+          messageDiv.textContent = "Error verifying OTP.";
+          messageDiv.style.color = "red";
         });
+    });
 
-        document.getElementById("verifyOtp").addEventListener("click", function() {
-            const enteredOtp = document.getElementById("otpInput").value;
-            const messageDiv = document.getElementById("message");
+    function startOtpTimer() {
+      otpExpiryTime = 120;
+      const timerElement = document.getElementById("otpTimer");
 
-            if (!currentOtp) {
-                messageDiv.textContent = "Generate an OTP first!";
-                messageDiv.style.color = "red";
-                return;
-            }
-
-            if (enteredOtp === currentOtp) {
-                messageDiv.textContent = "✅ OTP Verified Successfully!";
-                messageDiv.style.color = "green";
-                clearInterval(otpExpiryTimer);
-                document.getElementById("otpTimer").textContent = "";
-            } else {
-                messageDiv.textContent = "❌ Invalid OTP!";
-                messageDiv.style.color = "red";
-            }
-        });
-
-        function startOtpTimer() {
-            otpExpiryTime = 120;
-            const timerElement = document.getElementById("otpTimer");
-            
-            otpExpiryTimer = setInterval(() => {
-                if (otpExpiryTime <= 0) {
-                    clearInterval(otpExpiryTimer);
-                    timerElement.textContent = "OTP Expired!";
-                    currentOtp = null;
-                } else {
-                    const minutes = Math.floor(otpExpiryTime / 60);
-                    const seconds = otpExpiryTime % 60;
-                    timerElement.textContent = `OTP expires in ${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
-                    otpExpiryTime--;
-                }
-            }, 1000);
+      otpExpiryTimer = setInterval(() => {
+        if (otpExpiryTime <= 0) {
+          clearInterval(otpExpiryTimer);
+          timerElement.textContent = "OTP Expired!";
+        } else {
+          const minutes = Math.floor(otpExpiryTime / 60);
+          const seconds = otpExpiryTime % 60;
+          timerElement.textContent = `OTP expires in ${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+          otpExpiryTime--;
         }
-    </script>
+      }, 1000);
+    }
+  </script>
 </body>
 </html>
