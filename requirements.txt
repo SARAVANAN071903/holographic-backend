@@ -6,4 +6,5 @@ opencv-python
 qrcode
 Pillow
 gunicorn
+python-dotenv
 
