@@ -4,7 +4,7 @@ import numpy as np
 import cv2
 import qrcode
 from flask_cors import CORS
-from flask import Flask, jsonify, send_from_directory
+from flask import Flask, jsonify, send_from_directory, request
 from PIL import Image
 from dotenv import load_dotenv
 
@@ -22,6 +22,9 @@ CORS(app)
 # ✅ Output directory for QR images
 OUTPUT_DIR = os.path.join(os.path.dirname(__file__), 'output')
 os.makedirs(OUTPUT_DIR, exist_ok=True)
+
+# ✅ Store OTP in memory (for temporary use)
+current_otp = None
 
 def generate_holographic_qr(otp_code, output_path):
     """Generate holographic-styled QR code without visible OTP"""
@@ -56,8 +59,11 @@ def generate_holographic_qr(otp_code, output_path):
 
 @app.route('/generate_otp')
 def generate_otp():
+    global current_otp
     try:
         otp_code = secrets.token_hex(3)  # 6-digit hexadecimal OTP
+        current_otp = otp_code  # Store OTP for verification
+
         filename = f"holographic_otp_{otp_code}.png"
         image_path = os.path.join(OUTPUT_DIR, filename)
 
@@ -70,6 +76,23 @@ def generate_otp():
             "image_url": f"/otp_image/{filename}",
             "expires_in": 300  # For client-side handling
         })
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+@app.route('/verify_otp', methods=['POST'])
+def verify_otp():
+    global current_otp
+    try:
+        data = request.get_json()
+        user_otp = data.get("otp")
+
+        if not user_otp:
+            return jsonify({"status": "error", "message": "OTP is required"}), 400
+
+        if user_otp == current_otp:
+            return jsonify({"status": "success", "message": "OTP verified!"})
+        else:
+            return jsonify({"status": "error", "message": "Invalid OTP"}), 401
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
